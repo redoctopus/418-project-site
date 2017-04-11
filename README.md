@@ -18,7 +18,7 @@ In addition, I will be tweaking the code in order to make good use of the cache,
 
 ## The Challenge
 
-The main challenge here is not in maximizing the amount of parallelism in the program, but in speeding up and optimizing the operations needed for rendering a single frame such that the raytracer can produce real-time results (around 30fps). The work itself is very parallelizable, as the workload itself consists of a great many independent operations, but the computation for each ray also needs to access the metadata for the triangles it intersects, and the fact still stands that there are many individual rays that need to be computed for the entire image. Also note that a given CPU cannot run all that many threads at once (and certainly now as many threads in parallel as a GPU could), so it will be an interesting experience to try to see how well I can do with CPU parallelism.
+The main challenge here is not in maximizing the amount of parallelism in the program, but in speeding up and optimizing the operations needed for rendering a single frame such that the raytracer can produce real-time results (around 30fps). The work itself is very parallelizable, as the workload itself consists of a great many independent operations, but the computation for each ray also needs to access the metadata for the triangles it intersects, and the fact still stands that there are many individual rays that need to be computed for the entire image. Also note that a given CPU cannot run all that many threads at once (and certainly not as many threads in parallel as a GPU could), so it will be an interesting experience to try to see how well I can do with CPU parallelism.
 
 
 ## Resources
@@ -40,7 +40,7 @@ When I demo my final project, I hope to show at least one real-time raytraced an
 
 ## Platform Choice
 
-The restriction of using the CPU for parallel rendering (as opposed to the GPU) provides the point of interest in this problem. I will be using C/C++/possibly in-line assembly for this task, as speed is of the essence, and since they provide readily available low-level hardware access that may be needed for some optimizations.
+The restriction of using the CPU for parallel rendering (as opposed to the GPU) provides the point of interest in this problem. I will be using C/C++/possibly inline assembly for this task, as speed is of the essence, and since these languages provide readily available low-level hardware access that may be needed for some optimizations.
 
 
 ## Schedule
