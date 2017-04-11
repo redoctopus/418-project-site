@@ -29,23 +29,42 @@ As suggested by Professor Kayvon, I will not be writing a renderer from scratch;
 ## Goals & Deliverables
 
 ### Goals
+1. Parallelize the raytracing per ray, and across the entire rendered image
+2. Modify the parallel implementation to use SIMD and optimize with respect to cache accesses and SIMD instructions, aiming for a 4x speedup
+3. Implement the adaptive subsampling technique, aiming to get to real-time raytracing
+4. HOPE TO ACHIEVE: Additional speedup, to be determined from further research
+
+### Deliverables
+When I demo my final project, I hope to show at least one real-time raytraced animation live, and give a general metric for the number of frames that can be rendered per second. I also hope to show speedup graphs comparing my implementation at various implementation checkpoints to the original renderer that my code will be based off of. The original, serial renderer will be the baseline for comparison for this project and the speedup achieved.
 
 
+## Platform Choice
+
+The restriction of using the CPU for parallel rendering (as opposed to the GPU) provides the point of interest in this problem. I will be using C/C++/possibly in-line assembly for this task, as speed is of the essence, and since they provide readily available low-level hardware access that may be needed for some optimizations.
 
 
+## Schedule
 
-```
-**Bold** and _Italic_ and `Code` text
+### Week 1 (4/10-4/15)
+- Research and finalize raytracing codebase to be used as the baseline
+- Familiarize with codebase, get a feel for how everything is laid out and how it works
 
-[Link](url) and ![Image](src)
+### Week 2 (4/16-4/22)
+- Implement naive multithreading
+- Start a naive SIMD implementation
+- If time allows, start optimizations and tweaks to SIMD to aim for 4x speedup
 
+### Week 3 (4/23-4/29)
+- Finish up with SIMD implementation and optimizations
+- Tuesday, April 25: Checkpoint! (Have a working and nontrivial SIMD implementation, record speedup achieved)
+- Thursday, April 27: If time allows, start working on a framework for adaptive subsampling
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+### Week 4 (4/30-5/6)
+- Finish framework for adaptive subsampling
+- Implement adaptive subsampling, record speedup
+- Work out work distribution and analyze amount of divergent execution caused by adaptive subsampling
 
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/redoctopus/418-project-site/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+### Week 5 (5/7-5/12)
+- If necessary, look at alternative scheduling methods to minimize divergent execution
+- Thursday, May 11: Finalize presentation and report
+- Friday, May 12: Report due & Parallelism Competition Day!
