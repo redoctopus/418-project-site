@@ -44,23 +44,24 @@ The restriction of using the CPU for parallel rendering (as opposed to the GPU) 
 
 
 ## Schedule
+(Last updated 04/25/2017)
 
 ### Week 1 (4/10-4/15)
 - Research and finalize raytracing codebase to be used as the baseline
-- Familiarize with codebase, get a feel for how everything is laid out and how it works
 
 ### Week 2 (4/16-4/22)
-- Implement naive multithreading
-- Start a naive SIMD implementation
-- If time allows, start optimizations and tweaks to SIMD to aim for 4x speedup
+- Familiarize with codebase, get a feel for how everything is laid out and how it works
+- Build and have baseline timings
 
 ### Week 3 (4/23-4/29)
-- Finish up with SIMD implementation and optimizations
-- Tuesday, April 25: Checkpoint! (Have a working and nontrivial SIMD implementation, record speedup achieved)
-- Thursday, April 27: If time allows, start working on a framework for adaptive subsampling
+- Implement naive multithreading
+- Tuesday, April 25: Checkpoint!
+- Modify output stream to draw to screen instead of .png (SDL)
+- Rotation and re-draw
 
 ### Week 4 (4/30-5/6)
-- Finish framework for adaptive subsampling
+- Start a naive SIMD implementation
+- Start framework for adaptive subsampling
 - Implement adaptive subsampling, record speedup
 - Work out work distribution and analyze amount of divergent execution caused by adaptive subsampling
 
@@ -68,3 +69,21 @@ The restriction of using the CPU for parallel rendering (as opposed to the GPU) 
 - If necessary, look at alternative scheduling methods to minimize divergent execution
 - Thursday, May 11: Finalize presentation and report
 - Friday, May 12: Report due & Parallelism Competition Day!
+
+## Checkpoint Report
+
+So far, I have found a suitable C++ raytracing codebase (see the [site](http://www.cosinekitty.com/raytrace/)), and have timed a few simple benchmarks that I will be trying to improve on. The former required trawling the web for a raytracer that 1) did not already implement multithreading, as that would defeat the purpose of this project, and 2) was not too naive. After deciding on the codebase, I read through the relevant code and some of the documentation to figure out the code structure, and made sure that everything built and ran on my machine without any issues. Most recently, I added some timing code for the test images such that I have a baseline to refer to post-threading.
+
+Finding a raytracer that fit both criteria mentioned was a bit of an ordeal (it was pretty hard to find a middle ground, and I ended up leaning more towards "simplistic but functional"), so I have had to push back some of my schedule. I also added a task for changing the way that the existing code writes files and another task for animating (just rotation for now), as I would like to have a way to write to the screen instead of directly to a .png file such that I can see how my edits do directly.
+
+Given my current schedule, my goals are slighty modified:
+1. Parallelize the raytracing per ray, and across the entire rendered image
+2. Modify the parallel implementation to use SIMD and optimize with respect to cache accesses and SIMD instructions, aiming for a 4x speedup
+3. REALLY HOPE TO ACHIEVE: Implement the adaptive subsampling technique, aiming to get to real-time raytracing
+4. HOPE TO ACHIEVE: Additional speedup, to be determined from further research
+
+In short, I am not entirely sure how long optimizing the code (#2) will take, which may mean that I don't have much time for #3. I still hope to have some speedup graphs comparing threaded performance and optimized threaded performance to the baseline speeds for a few test images. If at that point the animation is not painful to watch (hmm... to be determined what this means after I get a better grasp of speedup), I would also like to show a demo animation.
+
+Current issues:
+1. Finagling the code in the codebase--it seems pretty well-documented, but it's not the cleanest, so some of it still needs a bit of dedicated sit-down examining time before I will feel comfortable editing it in a big way.
+2. Mostly just getting the code to work; there are a few warnings that I need to tamp down, hopefully without breaking anything vital.
