@@ -1,11 +1,38 @@
 # 15-428 Project: Parallelized Real-Time CPU Raytracing
 Jocelyn Huang (jocelynh)
 
-
 ## Summary
 
-I am going to modify and optimize an existing CPU-based raytracer to run in real-time and in parallel. To do so, I will be exploiting SIMD instructions and implementing and researching raytracing-specific optimizations to reduce memory and CPU usage.
+I am modifying and optimizing an existing CPU-based raytracer to run in real-time and in parallel. To get the raytracer up to speed, I will be exploring parallelization methods including SIMD instructions and OpenMP, and implementing and researching raytracing-specific optimizations to reduce memory and CPU usage.
 
+## Pre-Submission Overview
+
+### Challenges
+
+There were a few major unforseen hurdles in parallelizing the the code, which had made optimizations for serial raytracing that unfortunately created many data dependencies and potential race conditions. This meant that I had to do some major refactoring in order to actually get pthreads working, which involved redesigning the code to remove reuse of data structures between individual rays and getting around class inheritance issues caused by the pthreads library not supporting the execution of C++ member functions. While doing this, I also made some small optimizations for cache locality, including changing some array accesses.
+
+I also had to put some brainpower into animating the scene; the original format was not meant for being animated, as the models are themselves compiled C++ code and the traced scenes were originally just saved to .png images. This involved learning a bit of SDL to begin with, and then when the code was parallelized, figuring where to place synchronization code in order to get each frame rendered without race conditions. (It also turns out that MacOS doesn't actually implement pthread barriers, so that was also an adventure. I ended up borrowing code from [this library](http://blog.albertarmea.com/post/47089939939/using-pthreadbarrier-on-mac-os-x).)
+
+Currently, I am attempting to vectorize the code in order to obtain a better speedup.
+
+### Preliminary Results
+
+I have managed to get a slightly greater than 2x speedup on my machine, with some benchmarked timing as follows:
+
+|   Type           |  Timing (s)  |
+| ---------------- | ------------ |
+|Serial Code       |      0.76552 |
+| OMP static (4)   |      0.42122 |
+| OMP static (8)   |      0.36092 |
+| OMP static (16)  |      0.37554 |
+| OMP dynamic (4)  |      0.33272 |
+| OMP dynamic (8)  |      0.31678 |
+| OMP dynamic (16) |      0.31736 |
+| pthreads (1)     |      0.69666 |
+| pthreads (4)     |      0.31975 |
+| pthreads (8)     |      0.31196 |
+
+I hope to have SIMD results by Friday, with a corresponding speedup graph. If time allows, I will also be making some optimizations to the code to make use of SIMD cache locality.
 
 ## Background
 
