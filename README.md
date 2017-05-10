@@ -32,6 +32,8 @@ I have managed to get a slightly greater than 2x speedup on my machine, with som
 | pthreads (4)     |      0.31975 |
 | pthreads (8)     |      0.31196 |
 
+I ended up switching from OMP to pthreads in order to avoid the overhead of repeatedly spawning and joining instances for every frame; with pthreads, I could simply use a barrier and have the next iteration of calculations starting while the current frame is being written to the screen, which also involved double-buffering so as to not cause screen tearing.
+
 I hope to have SIMD results by Friday, with a corresponding speedup graph. If time allows, I will also be making some optimizations to the code to make use of SIMD cache locality.
 
 ## Background
