@@ -1,4 +1,4 @@
-# 15-428 Project: Parallelized Real-Time CPU Raytracing
+# 15-418 Project: Parallelized Real-Time CPU Raytracing
 Jocelyn Huang (jocelynh)
 
 ## Summary
