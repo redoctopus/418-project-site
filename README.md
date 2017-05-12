@@ -87,21 +87,30 @@ As mentioned previously, the original serial code ran at about 0.766 seconds per
 
 I measured performance using time between frame updates, and compared these times to the baseline timings. Speedup was measured simply as original time/improved time. To get a visual cue of how I was doing throughout the project, I animated the chessboard to zoom in and out and ran timings on each frame of the animation.
 
-With the optimized pthreads and SIMD, a raytracer utilizing four pthreads ran at about 0.277 seconds per frame (3.6 fps), a speedup of 2.8x over the serial version. Due to the interleaving of rows, workload balance was quite good, and even without SIMD was faster than the dynamic OpenMP code. Unfortunately, since I couldn't change the Color struct as mentioned above, the overhead loading and storing the RGB values of each pixel for every SIMD operation cost a large part of the potential speedup. This meant that though this version of the code was better than the original OpenMP version, I ended up trading a significant amount of computational cost with memory bandwidth cost.
+With the optimized pthreads and SIMD, a raytracer utilizing four pthreads ran at about 0.277 seconds per frame (3.6 fps), a speedup of 2.8x over the serial version. Due to the interleaving of rows, workload balance was quite good, and even without SIMD was faster than the dynamic OpenMP code. Unfortunately, since I couldn't change the Color struct as mentioned above, the overhead loading and storing the RGB values of each pixel for every SIMD operation cost a large part of the potential speedup. This meant that though this version of the code was better than the original OpenMP version, I ended up trading a significant amount of computational cost for memory bandwidth cost--according to the intruction latency tables published by Dr. Agner Fog, vector loads and stores using pointers as well as vector broadcasts take four cycles, as opposed to the original code which could operate much faster using registers.
 
-The biggest gain in speedup came with actually reducing the number of pixels that had to be raytraced through subsampling, which didn't sacrifice noticeable image clarity. The following image shows in garish red the actual pixels that were be skipped in that frame of the animation, thereby saving the computational cost of recursively raytracing for each. Notice that the majority of the image can now be directly interpolated from previous computations!
+The biggest gain in speedup came with actually reducing the number of pixels that had to be raytraced through subsampling, which didn't sacrifice noticeable image clarity. The following image shows in garish red the actual pixels that were be skipped in that frame of the animation, thereby saving the computational cost of recursively raytracing for each. Notice that the majority of the image can now be directly interpolated from previous computations, which cuts down drastically on the main bottleneck!
 
-<img src="chessboard_4_subsample.png" class="inline">
+<img src="images/chessboard_4_subsample.png" class="inline">
 
 *The red indicates pixels that did not need to be raytraced under subsampling, saving computation time.*
 
+In the end, four pthreads with SIMD execution and subsampling could produce a raytraced image in 0.177 seconds (5.7 fps), a speedup of 4.3x the original serial code, and 1.8x over the best OpenMP implementation. A graph of the times it took to raytrace each frame over each of my implementations is shown below, with the final (and fastest) implementation being the one using pthreads, SIMD, and subsampling. Drawing to the screen takes approximately 1/10 of the time to raytrace, so we know that the bottleneck now occurs in the memory accesses due to the SIMD loads and stores, as well as the loads and stores to the pixel data buffer, as mentioned above.
 
-## Possible Future Work
+<img src="images/speedup.png" class="inline">
 
-Shared resources, duplicate since no writes to the objects
-SIMD for color class
-subsampling in 2d
+*Graph showing all timings, side-by-side. Parentheses indicate number of threads for that particular implementation.*
+
+Of course, a GPU, which can run hundreds of threads in parallel, would have a much better time of parallelizing raytracing, but I wanted to see how much faster I could make a CPU implementation, as a good number of laptops have integrated GPUs that are not easy to program for. As a result, we are still greatly compute bound, though much less so with subsampling, with some of the computation traded for memory accesses of saved results and overhead of checking differences.
+
+## Possible Improvements
+- Add shared data structures per thread to mitigate overhead of creating and destroying them per pixel (implemented before in the serial code, but removed for thread safety).
+- Improve SIMD for the Color struct by doing a full overhaul of the struct, and making its fields vectors. This would also entail modifying all code that accesses the struct's color values and making slight adjustments to the SIMD execution of Color operations.
+- Perform subsampling in 2D, and perhaps implement adaptive subsampling (halving the size of the subsampled region repeatedly if needed).
 
 ## References
 - [Fundamentals of Ray Tracing (Don Cross)](http://www.cosinekitty.com/raytrace/), the codebase I used
 - [Adaptive Subsampling (Web Archive)](https://web-beta.archive.org/web/20100923081853/http://www.exceed.hu/h7/subsample.htm)
+- [Intel Intrinsics Guide](https://software.intel.com/sites/landingpage/IntrinsicsGuide/)
+- [StackOverflow timing code](http://stackoverflow.com/questions/1861294/how-to-calculate-execution-time-of-a-code-snippet-in-c)
+- [Instruction Latency Tables](http://agner.org/optimize/instruction_tables.pdf)
