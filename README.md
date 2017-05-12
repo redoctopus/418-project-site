@@ -3,33 +3,8 @@ Jocelyn Huang (jocelynh)
 
 ## Summary
 
-My goal was to modify and optimize an existing CPU-based raytracer to run in parallel and at a framerate close to real-time, on a CPU. To get the raytracer up to speed, I explored a few parallelization methods including SIMD instructions and OpenMP, and implementing and researching raytracing-specific optimizations to reduce memory and CPU usage. All benchmarks and the final code were run on my 2011 Macbook Air, which has two cores (four hardware threads).
+My goal was to modify and optimize an existing CPU-based raytracer to run in parallel and at a framerate close to real-time, on a CPU. To get the raytracer up to speed, I explored a few parallelization methods including SIMD instructions and OpenMP, and implementing and researching raytracing-specific optimizations to reduce memory and CPU usage. All benchmarks and the final code were run on my 2011 Macbook Air, which has two cores (four hardware threads), and the demo consisted of a simple animated image being raytraced in real time on my laptop.
 
-<!--### Challenges
-
-There were a few major unforseen hurdles in parallelizing the the code, which had made optimizations for serial raytracing that unfortunately created many data dependencies and potential race conditions. This meant that I had to do some major refactoring in order to actually get pthreads working, which involved redesigning the code to remove reuse of data structures between individual rays and getting around class inheritance issues caused by the pthreads library not supporting the execution of C++ member functions. While doing this, I also made some small optimizations for cache locality, including changing some array accesses.
-
-I also had to put some brainpower into animating the scene; the original format was not meant for being animated, as the models are themselves compiled C++ code and the traced scenes were originally just saved to .png images. This involved learning a bit of SDL to begin with, and then when the code was parallelized, figuring where to place synchronization code in order to get each frame rendered without race conditions. (It also turns out that MacOS doesn't actually implement pthread barriers, so that was also an adventure. I ended up borrowing code from [this library](http://blog.albertarmea.com/post/47089939939/using-pthreadbarrier-on-mac-os-x).)
-
-### Preliminary Results
-
-I have managed to get a slightly greater than 2x speedup on my machine, with some benchmarked timing as follows:
-
-|   Type           |  Timing (s)  |
-| ---------------- | ------------ |
-|Serial Code       |      0.76552 |
-| OMP static (4)   |      0.42122 |
-| OMP static (8)   |      0.36092 |
-| OMP static (16)  |      0.37554 |
-| OMP dynamic (4)  |      0.33272 |
-| OMP dynamic (8)  |      0.31678 |
-| OMP dynamic (16) |      0.31736 |
-| pthreads (1)     |      0.69666 |
-| pthreads (4)     |      0.31975 |
-| pthreads (8)     |      0.31196 |
-
-I ended up switching from OMP to pthreads in order to avoid the overhead of repeatedly spawning and joining instances for every frame; with pthreads, I could simply use a barrier and have the next iteration of calculations starting while the current frame is being written to the screen, which also involved double-buffering so as to not cause screen tearing.
--->
 
 ## Background
 
@@ -101,7 +76,7 @@ In the end, four pthreads with SIMD execution and subsampling could produce a ra
 
 *Graph showing all timings, side-by-side. Parentheses indicate number of threads for that particular implementation.*
 
-Of course, a GPU, which can run hundreds of threads in parallel, would have a much better time of parallelizing raytracing, but I wanted to see how much faster I could make a CPU implementation, as a good number of laptops have integrated GPUs that are not easy to program for. As a result, we are still compute bound, though much less so with subsampling, with some of the computation traded for memory accesses of saved results and overhead of checking differences. At this point, the majority of the latency comes from excess memory operations incurred by trying to convert Color values to SIMD vectors--at best, only one in four pixels need to be raytraced, with at least 40 loads or stores per frame per pixel, while interpolated pixels only require four stores, one per color channel. This could potentially be improved by a significant refactoring of the original code structure, which I considered attempting briefly before realizing how much of the code broke as a consequence.
+Of course, a GPU, which can run hundreds of threads in parallel, would have a much better time of parallelizing raytracing, but I wanted to see how much faster I could make a CPU implementation, as a good number of laptops have integrated GPUs that are not easy to program for. As a result, we are still compute bound, though much less so with subsampling, with some of the computation traded for memory accesses of saved results and overhead of checking differences. As mentioned, due to interleaving rows, each thread finishes computation in approximately the same amount of time, and synchronization is only needed once per frame so divergence of execution and thread synchronization are not our main concerns. This means that at this point, the majority of the latency comes from excess memory operations incurred by trying to convert Color values to SIMD vectors--at best, only one in four pixels need to be raytraced, with at least 40 loads or stores per frame per pixel, while interpolated pixels only require four stores, one per color channel. This could potentially be improved by a significant refactoring of the original code structure, which I considered attempting briefly before realizing how much of the code broke as a consequence. 
 
 ## Possible Improvements
 - Add shared data structures per thread to mitigate overhead of creating and destroying them per pixel (implemented before in the serial code, but removed for thread safety).
@@ -110,6 +85,7 @@ Of course, a GPU, which can run hundreds of threads in parallel, would have a mu
 
 ## References
 - [Fundamentals of Ray Tracing (Don Cross)](http://www.cosinekitty.com/raytrace/), the codebase I used
+- [OSX Barriers Implementation](http://blog.albertarmea.com/post/47089939939/using-pthreadbarrier-on-mac-os-x)
 - [Adaptive Subsampling (Web Archive)](https://web-beta.archive.org/web/20100923081853/http://www.exceed.hu/h7/subsample.htm)
 - [Intel Intrinsics Guide](https://software.intel.com/sites/landingpage/IntrinsicsGuide/)
 - [StackOverflow timing code](http://stackoverflow.com/questions/1861294/how-to-calculate-execution-time-of-a-code-snippet-in-c)
