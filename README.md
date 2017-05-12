@@ -46,11 +46,12 @@ To prime the code for my project and to get some reasonable baselines, I had to 
 
 ### Baselines
 
-I chose to use the built-in "chessboard" image for my baseline timings, as the code uses compiled models in its raytracing rather than taking in a standard format, and the chessboard was one of the more complex and interesting ones included. The serial code with the original serial optimizations took 0.766 seconds/frame (1.3 fps) averaged over several runs to raytrace for one frame on my machine.
+I chose to use the built-in "chessboard" image for my baseline timings, as the code uses models defined in C++ in its raytracing rather than taking in a standard format, and the chessboard was one of the more complex and interesting ones included. This particular image is 600x360 pixels, and the code uses 20 recursive calls as a default, which I kept. The serial code with the original serial optimizations took 0.766 seconds/frame (1.3 fps) averaged over several runs to raytrace for one frame on my machine.
 
 In addition to a serial baseline, I also wrote an OpenMP implementation of the raytracer parallelized across rows of the image, partially as a warm-up and partially to get a baseline for a simple parallel approach, just to get an idea of what sort of speedup I could expect. Timings for these baselines can be found in the Results section below.
 
 <img src="images/chessboard.png" class="inline">
+
 *The chessboard image used as a baseline, with no antialiasing.*
 
 ### Methods for Speedup
@@ -63,15 +64,16 @@ Of course, the main bottleneck was the computational cost of recursively raytrac
 
 With regards to SIMD execution, I did consider vector operations across pixels, but this turned out to not be a great idea; adjacent pixels may hit different object surfaces or even the background, which meant that there would be a lot of potential for divergent execution and loading of several different objects for different pixels' needs. As such, even though the modification to use SIMD in Colors was imperfect, I decided to keep it rather than perform SIMD operations over different pixels.
 
-I also looked into ways of reducing the actual amount of computation workload through heuristics for pixel colors, and found that an "adaptive subsampling" technique (somewhat explained [here](https://web-beta.archive.org/web/20100923081853/http://www.exceed.hu/h7/subsample.htm)) was useful in reducing the total number of rays that need to be traced, as part of the computational bound on this problem is the large number of rays to be traced in a single image. Essentially, subsampling takes every few consecutive pixels as sample points, checks if they are close in color, and interpolates between them if they are. I only had time to try subsampling for every four consecutive pixels in each row rather in a square, but this greatly reduced the workload by removing a large number of the computationally intensive raytracing operations.
+I also looked into ways of reducing the actual amount of computation workload through heuristics for pixel colors, and found that an "adaptive subsampling" technique was useful in reducing the total number of rays that need to be traced, as part of the computational bound on this problem is the large number of rays to be traced in a single image. Essentially, subsampling takes every few consecutive pixels as sample points, checks if they are close in color, and interpolates between them if they are. I only had time to try subsampling for every four consecutive pixels in each row rather in a square, but this greatly reduced the workload by removing a large number of the computationally intensive raytracing operations.
 
 
 ## Results
 
-Baselines
-The best performance I achieved with OpenMP was about 0.316 seconds/frame (3.2 fps), a speedup of 2.4x. This is in fact quite reasonable for my two-core machine
+### Baselines
 
-|   Type           |  Timing (s)  |
+As mentioned previously, the original serial code ran at about 0.766 seconds per frame. For my simple parallel baselines, The best performance I achieved with OpenMP was about 0.316 seconds/frame (3.2 fps), a speedup of 2.4x. This is in fact quite reasonable for my two-core machine, as we effectively get two threads with "true" parallelism, with an extra thread helping to hide latency per core, but nothing else. The averaged timings can be seen in the following table.
+
+|  Baseline Type   |  Timing (s)  |
 | ---------------- | ------------ |
 |Serial Code       |      0.76552 |
 | OMP static (4)   |      0.42122 |
@@ -81,14 +83,17 @@ The best performance I achieved with OpenMP was about 0.316 seconds/frame (3.2 f
 | OMP dynamic (8)  |      0.31678 |
 | OMP dynamic (16) |      0.31736 |
 
+### Final Speedups and Results
 
-With the optimized pthreads and SIMD, four pthreads ran at about 0.277 seconds to raytrace each frame (3.6 fps), a speedup of 2.8x. Unfortunately, since I couldn't change the Color struct to just contain a SIMD vector without breaking more lines of code than I could debug before the end of the project, I had to repeatedly load and store the RGB values of each pixel every time I wanted a SIMD operation, which negated of a large part of the potential speedup.
+I measured performance using time between frame updates, and compared these times to the baseline timings. Speedup was measured simply as original time/improved time. To get a visual cue of how I was doing throughout the project, I animated the chessboard to zoom in and out and ran timings on each frame of the animation.
 
-The biggest gain in speedup came with actually reducing the number of pixels that had to be raytraced without sacrificing too much image clarity.
+With the optimized pthreads and SIMD, a raytracer utilizing four pthreads ran at about 0.277 seconds per frame (3.6 fps), a speedup of 2.8x over the serial version. Due to the interleaving of rows, workload balance was quite good, and even without SIMD was faster than the dynamic OpenMP code. Unfortunately, since I couldn't change the Color struct as mentioned above, the overhead loading and storing the RGB values of each pixel for every SIMD operation cost a large part of the potential speedup. This meant that though this version of the code was better than the original OpenMP version, I ended up trading a significant amount of computational cost with memory bandwidth cost.
 
+The biggest gain in speedup came with actually reducing the number of pixels that had to be raytraced through subsampling, which didn't sacrifice noticeable image clarity. The following image shows in garish red the actual pixels that were be skipped in that frame of the animation, thereby saving the computational cost of recursively raytracing for each. Notice that the majority of the image can now be directly interpolated from previous computations!
 
-- appropriate graphs, table from before + updates
-- example images
+<img src="chessboard_4_subsample.png" class="inline">
+
+*The red indicates pixels that did not need to be raytraced under subsampling, saving computation time.*
 
 
 ## Possible Future Work
@@ -96,3 +101,7 @@ The biggest gain in speedup came with actually reducing the number of pixels tha
 Shared resources, duplicate since no writes to the objects
 SIMD for color class
 subsampling in 2d
+
+## References
+- [Fundamentals of Ray Tracing (Don Cross)](http://www.cosinekitty.com/raytrace/), the codebase I used
+- [Adaptive Subsampling (Web Archive)](https://web-beta.archive.org/web/20100923081853/http://www.exceed.hu/h7/subsample.htm)
