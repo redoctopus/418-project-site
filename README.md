@@ -50,7 +50,7 @@ I chose to use the built-in "chessboard" image for my baseline timings, as the c
 
 In addition to a serial baseline, I also wrote an OpenMP implementation of the raytracer parallelized across rows of the image, partially as a warm-up and partially to get a baseline for a simple parallel approach, just to get an idea of what sort of speedup I could expect. Timings for these baselines can be found in the Results section below.
 
-<img src="images/chessboard.png", class="inline">
+<img src="images/chessboard.png" class="inline">
 *The chessboard image used as a baseline, with no antialiasing.*
 
 ### Methods for Speedup
